@@ -65,13 +65,10 @@ module T11 where
         | otherwise = seatPassengers seatsInitial newSeats (r, c + 1)
         where newSeats = updateSeat seatsInitial finalSeats indices
 
-    applySeatRules :: SeatLayout -> Int
-    applySeatRules seats = applySeatRulesHelper seats []
-
-    applySeatRulesHelper :: SeatLayout -> [SeatLayout] -> Int
-    applySeatRulesHelper seats computed
+    applySeatRules :: SeatLayout -> [SeatLayout] -> Int
+    applySeatRules seats computed
         | newSeats `elem` computed = countUnoccupied newSeats (1, 1)
-        | otherwise = applySeatRulesHelper newSeats (newSeats:computed)
+        | otherwise = applySeatRules newSeats (newSeats:computed)
         where newSeats = seatPassengers seats seats (1, 1)
 
     countUnoccupied :: SeatLayout -> (Int, Int) -> Int
@@ -84,4 +81,4 @@ module T11 where
     fstPart :: IO Int
     fstPart = do
         input <- parseInput
-        return $ applySeatRules input
+        return $ applySeatRules input []
