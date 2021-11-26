@@ -16,9 +16,11 @@ module Util where
                         [(val, "")] -> Just val
                         _           -> Nothing
 
-
     splitOn :: Foldable t => Char -> t Char -> [String]
     splitOn delim = foldr (\c (x:xs) -> if c == delim then "":x:xs else (c:x):xs) [""]
+
+    split' :: T.Text -> String -> [T.Text]
+    split' value del = T.splitOn (T.pack del) value
 
     tuplify :: [a] -> (a, a)
     tuplify [x, y] = (x, y)
