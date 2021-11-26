@@ -10,7 +10,7 @@ module T06 where
 
     parseInput :: IO [[T.Text]]
     parseInput = do
-        input <- readFile "inputs/06.in"
+        input <- readFile "06.in"
         let unprocGroups = splitGroups input
         return $ map T.lines unprocGroups
 

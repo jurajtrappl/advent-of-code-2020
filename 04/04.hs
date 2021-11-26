@@ -23,7 +23,7 @@ module T04 where
 
     parseInput :: IO [[T.Text]]
     parseInput = do
-        input <- readFile "inputs/04.in"
+        input <- readFile "04.in"
         let unprocPassports = splitPassportData input
         let withoutNewlines = map T.lines unprocPassports
         return $ map (concatMap T.words) withoutNewlines

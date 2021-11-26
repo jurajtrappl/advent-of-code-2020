@@ -1,6 +1,6 @@
 module T03 where
-    import Data.Matrix
-    import Util
+    import Data.Matrix ( (!), (<|>), fromLists, Matrix(..) )
+    import Util ( iter )
     
     treeSign :: String 
     treeSign = "#"
@@ -21,7 +21,7 @@ module T03 where
 
     parseInput :: IO (Matrix [Char])
     parseInput = do
-        input <- readFile "inputs/03.in"
+        input <- readFile "03.in"
         return $ fromLists $ map (map (:[])) $ lines input
 
     fstPart :: IO ()

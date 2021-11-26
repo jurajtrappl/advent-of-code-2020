@@ -1,9 +1,9 @@
-module T01 (fstPart, sndPart) where
+module T01 where
     import Util (readInt, uncurry3)
     
     readInputToNumbers :: IO [Int]
     readInputToNumbers = do
-        input <- readFile "inputs/01.in"
+        input <- readFile "01.in"
         return $ map readInt $ lines input
 
     fstPart :: IO ()

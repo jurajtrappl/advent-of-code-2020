@@ -6,7 +6,7 @@ module T07 where
     
     parseInput :: IO [T.Text]
     parseInput = do
-        input <- IO.readFile "inputs/07.in"
+        input <- IO.readFile "07.in"
         return $ T.lines input
 
     emptyEdge :: (Int, T.Text)

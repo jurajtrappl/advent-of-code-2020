@@ -1,4 +1,4 @@
-module T02 (fstPart, sndPart) where
+module T02 where
     import Util (readInt, splitOn)
     import Data.Bits ( Bits(xor) )
     
@@ -37,13 +37,13 @@ module T02 (fstPart, sndPart) where
 
     fstPartProcessInput :: IO [FstPartPasswd]
     fstPartProcessInput = do
-        input <- readFile "inputs/02.in"
+        input <- readFile "02.in"
         let inputLines = map words $ lines input
         return $ map fstPartProcessLine inputLines
 
     sndPartProcessInput :: IO [SndPartPasswd]
     sndPartProcessInput = do
-        input <- readFile "inputs/02.in"
+        input <- readFile "02.in"
         let inputLines = map words $ lines input
         return $ map sndPartProcessLine inputLines
 

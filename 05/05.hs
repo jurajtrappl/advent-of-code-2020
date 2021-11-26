@@ -29,7 +29,7 @@ module T05 where
 
     parseInput :: IO [([Direction], [Direction])]
     parseInput = do
-        input <- readFile "inputs/05.in"
+        input <- readFile "05.in"
         return $ map parseDirections $ lines input
 
     toDirection :: Char -> Direction

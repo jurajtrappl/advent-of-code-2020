@@ -22,7 +22,7 @@ module T08 where
 
     fstPart :: IO ()
     fstPart = do
-        input <- readFile "inputs/08.in"
+        input <- readFile "08.in"
         let commands = map parseCommand $ lines input
         print $ fstPartCodeRunner commands 0 0 []
 
@@ -56,7 +56,7 @@ module T08 where
 
     sndPart :: IO ()
     sndPart = do
-        input <- readFile "inputs/08.in"
+        input <- readFile "08.in"
         let commands = map parseCommand $ lines input
         let switched = map (switchInstructions commands) $ findSwitchableInstr commands
         print $ snd $ head $ filter (not . isCorrupted . fst) $ map (sndPartCodeRunner 0 0 []) switched
