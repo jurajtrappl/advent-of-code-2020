@@ -51,11 +51,11 @@ module T05 where
         input <- parseInput
         print $ maximum $ map computePosition input
 
-    data Seat = Seat {
-        row :: Int
-      , col :: Int
-      , identifier :: Int
-    } deriving (Eq)
+    data Seat = Seat
+        { row        :: Int
+        , col        :: Int
+        , identifier :: Int
+        } deriving (Eq)
 
     instance Show Seat where
         show x = show (identifier x)
