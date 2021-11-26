@@ -1,59 +1,58 @@
-module T02 where
-    import Util (readInt, splitOn)
-    import Data.Bits ( Bits(xor) )
-    
-    type CompulsoryLetter = Char
-    type Letter = Char
+import Util (readInt, splitOn)
+import Data.Bits ( Bits(xor) )
 
-    type Password = String
+type CompulsoryLetter = Char
+type Letter = Char
 
-    data Occurrence = Occurrence Int Int
-    data Positions = Positions Int Int
+type Password = String
 
-    data FstPartPasswd = FstPartPasswd Occurrence CompulsoryLetter Password
-    data SndPartPasswd = SndPartPasswd Positions Letter Password
+data Occurrence = Occurrence Int Int
+data Positions = Positions Int Int
 
-    class Valid a where
-        isValid :: a -> Bool
+data FstPartPasswd = FstPartPasswd Occurrence CompulsoryLetter Password
+data SndPartPasswd = SndPartPasswd Positions Letter Password
 
-    instance Valid FstPartPasswd where
-        isValid (FstPartPasswd (Occurrence lower upper) compulsoryLetter password) =
-            lower <= compulsoryLetterCount && upper >= compulsoryLetterCount
-            where compulsoryLetterCount = (length . filter (== compulsoryLetter)) password
+class Valid a where
+    isValid :: a -> Bool
 
-    instance Valid SndPartPasswd where
-        isValid (SndPartPasswd (Positions first second) letter password) =
-            xor (password !! (first - 1) == letter) (password !! (second - 1) == letter)
-            
-    fstPartProcessLine :: [String] -> FstPartPasswd
-    fstPartProcessLine [occ, lttr, passwd] = FstPartPasswd occurence (head lttr) passwd
-        where [lowerBound, upperBound] = splitOn '-' occ
-              occurence = Occurrence (readInt lowerBound) (readInt upperBound)
+instance Valid FstPartPasswd where
+    isValid (FstPartPasswd (Occurrence lower upper) compulsoryLetter password) =
+        lower <= compulsoryLetterCount && upper >= compulsoryLetterCount
+        where compulsoryLetterCount = (length . filter (== compulsoryLetter)) password
 
-    sndPartProcessLine :: [String] -> SndPartPasswd
-    sndPartProcessLine [pos,lttr,passwd] = SndPartPasswd positions (head lttr) passwd
-        where [firstPos, secondPos] = splitOn '-' pos
-              positions = Positions (readInt firstPos) (readInt secondPos)
+instance Valid SndPartPasswd where
+    isValid (SndPartPasswd (Positions first second) letter password) =
+        xor (password !! (first - 1) == letter) (password !! (second - 1) == letter)
+        
+fstPartProcessLine :: [String] -> FstPartPasswd
+fstPartProcessLine [occ, lttr, passwd] = FstPartPasswd occurence (head lttr) passwd
+    where [lowerBound, upperBound] = splitOn '-' occ
+          occurence = Occurrence (readInt lowerBound) (readInt upperBound)
 
-    fstPartProcessInput :: IO [FstPartPasswd]
-    fstPartProcessInput = do
-        input <- readFile "02.in"
-        let inputLines = map words $ lines input
-        return $ map fstPartProcessLine inputLines
+sndPartProcessLine :: [String] -> SndPartPasswd
+sndPartProcessLine [pos,lttr,passwd] = SndPartPasswd positions (head lttr) passwd
+    where [firstPos, secondPos] = splitOn '-' pos
+          positions = Positions (readInt firstPos) (readInt secondPos)
 
-    sndPartProcessInput :: IO [SndPartPasswd]
-    sndPartProcessInput = do
-        input <- readFile "02.in"
-        let inputLines = map words $ lines input
-        return $ map sndPartProcessLine inputLines
+fstPartProcessInput :: IO [FstPartPasswd]
+fstPartProcessInput = do
+    input <- readFile "02.in"
+    let inputLines = map words $ lines input
+    return $ map fstPartProcessLine inputLines
 
-    fstPart :: IO ()
-    fstPart = do
-        processedInput <- fstPartProcessInput
-        print $ length $ filter isValid processedInput
+sndPartProcessInput :: IO [SndPartPasswd]
+sndPartProcessInput = do
+    input <- readFile "02.in"
+    let inputLines = map words $ lines input
+    return $ map sndPartProcessLine inputLines
 
-    sndPart :: IO ()
-    sndPart = do
-        processedInput <- sndPartProcessInput
-        print $ length $ filter isValid processedInput
+fstPart :: IO ()
+fstPart = do
+    processedInput <- fstPartProcessInput
+    print $ length $ filter isValid processedInput
+
+sndPart :: IO ()
+sndPart = do
+    processedInput <- sndPartProcessInput
+    print $ length $ filter isValid processedInput
         
