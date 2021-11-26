@@ -1,4 +1,5 @@
 module T09 where
+    
     import Data.List.Split (chunksOf)
 
     preambleLength :: Int
