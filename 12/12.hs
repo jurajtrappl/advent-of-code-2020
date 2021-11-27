@@ -27,13 +27,13 @@ type Rotation = Vector
 scaleV :: Vector -> Int -> Vector
 scaleV (V x y) factor = V (x * factor) (y * factor)
 
-scaleRotation :: Vector -> Direction -> Vector
-scaleRotation r@(V x y) (Left deg) = case deg of
+modifyRotation :: Vector -> Direction -> Vector
+modifyRotation r@(V x y) (Left deg) = case deg of
     90 -> V (-y) x
     180 -> V (-x) (-y)
     270 -> V y (-x)
     _ -> r
-scaleRotation r@(V x y) (Right deg) = case deg of
+modifyRotation r@(V x y) (Right deg) = case deg of
     90 -> V y (-x)
     180 -> V (-x) (-y)
     270 -> V (-y) x 
@@ -62,10 +62,10 @@ addDirection :: Vector -> Rotation -> Direction -> (Vector, Rotation)
 addDirection p rot dir = case dir of
     North val -> (p + scaleV (V 0 1) val, rot)
     South val -> (p + scaleV (V 0 (-1)) val, rot)
-    East val -> (p + scaleV (V (-1) 0) val, rot)
-    West val -> (p + scaleV (V 1 0) val, rot)
-    Left deg -> (p, scaleRotation rot dir)
-    Right deg -> (p, scaleRotation rot dir)
+    East val -> (p + scaleV (V 1 0) val, rot)
+    West val -> (p + scaleV (V (-1) 0) val, rot)
+    Left deg -> (p, modifyRotation rot dir)
+    Right deg -> (p, modifyRotation rot dir)
     Forward val -> (p + scaleV rot val, rot)
 
 processDirections :: Vector -> Vector -> [Direction] -> Vector
