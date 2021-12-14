@@ -1,9 +1,6 @@
 type Expense = Int
 type ExpenseReport = [Expense]
 
-uncurry3 :: (a -> b -> a) -> (a, b, b) -> a
-uncurry3 f (x, y, z) = f (f x y) z
-
 unsafeReadInt :: String -> Int
 unsafeReadInt s = read s :: Int
 
@@ -15,6 +12,9 @@ fstPart = do
     numbers <- readInputToNumbers
     let appropriatePairs = [(a, b) | a <- numbers, b <- numbers, a /= b, a + b == 2020]
     print $ uncurry (*) $ head appropriatePairs
+
+uncurry3 :: (a -> b -> a) -> (a, b, b) -> a
+uncurry3 f (x, y, z) = f (f x y) z
 
 sndPart :: IO ()
 sndPart = do

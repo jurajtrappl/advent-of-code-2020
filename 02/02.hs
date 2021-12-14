@@ -44,9 +44,12 @@ fstPartProcessInput = map (fstPartProcessLine . words) . lines <$> readFile "02.
 sndPartProcessInput :: IO [SndPartPasswd]
 sndPartProcessInput = map (sndPartProcessLine . words) . lines <$> readFile "02.in"
 
+solve :: (Functor f, Valid a) => f [a] -> f Int
+solve processF = processF <&> length . filter isValid
+
 fstPart :: IO Int
-fstPart = fstPartProcessInput <&> length . filter isValid
+fstPart = solve fstPartProcessInput
 
 sndPart :: IO Int
-sndPart = sndPartProcessInput <&> length . filter isValid
+sndPart = solve sndPartProcessInput
 
