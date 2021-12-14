@@ -38,18 +38,15 @@ sndPartProcessLine [pos,lttr,passwd] = SndPartPasswd positions (head lttr) passw
     where [firstPos, secondPos] = splitOn "-" pos
           positions = Positions (unsafeReadInt firstPos) (unsafeReadInt secondPos)
 
-fstPartProcessInput :: IO [FstPartPasswd]
-fstPartProcessInput = map (fstPartProcessLine . words) . lines <$> readFile "02.in"
-
-sndPartProcessInput :: IO [SndPartPasswd]
-sndPartProcessInput = map (sndPartProcessLine . words) . lines <$> readFile "02.in"
-
 solve :: (Functor f, Valid a) => f [a] -> f Int
 solve processF = processF <&> length . filter isValid
 
+parseInput :: ([String] -> b) -> IO [b]
+parseInput processLineF = map (processLineF . words) . lines <$> readFile "02.in"
+
 fstPart :: IO Int
-fstPart = solve fstPartProcessInput
+fstPart = solve $ parseInput fstPartProcessLine
 
 sndPart :: IO Int
-sndPart = solve sndPartProcessInput
+sndPart = solve $ parseInput sndPartProcessLine
 
