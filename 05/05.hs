@@ -2,8 +2,10 @@ import Data.List ( sort )
 import Data.Bifunctor (Bifunctor(bimap))
 import Data.Functor ((<&>))
 
--- U -> Upper (B, R) | B -> Bottom (F, L)
-data Direction = U | B deriving Show
+data Direction
+    = U             -- Upper (B, R)
+    | B             -- Bottom (F, L)
+    deriving Show
 
 data Seat = Seat 
     { row        :: Int
