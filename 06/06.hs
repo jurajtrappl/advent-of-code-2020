@@ -1,25 +1,22 @@
-import Data.Set (toList, fromList)
-import qualified Data.Text as Text
 import Data.Functor ((<&>))
+import Data.List.Split (splitOn)
+import Data.Set (toList, fromList)
 
-type Form = [Text.Text]
+type Form = [String]
 type Question = Char
 type Answer = String
 
-blankLineDelimiter :: Text.Text
-blankLineDelimiter = Text.pack "\n\n"
-
-splitGroups :: String -> [Text.Text]
-splitGroups = Text.splitOn blankLineDelimiter . Text.pack
+splitGroups :: String -> [String]
+splitGroups = splitOn "\n\n"
 
 parseInput :: IO [Form]
-parseInput = fmap (map Text.lines . splitGroups) (readFile "06.in")
+parseInput = fmap (map lines . splitGroups) (readFile "06.in")
 
 removeDuplicates :: Ord a => [a] -> [a]
 removeDuplicates = toList . fromList
 
 fstPart :: IO Int
-fstPart = parseInput <&> sum . map (length . removeDuplicates . Text.unpack) . map Text.concat
+fstPart = parseInput <&> sum . map ((length . removeDuplicates) . concat)
 
 questions :: [Question]
 questions = ['a'..'z']
@@ -31,4 +28,4 @@ commonlyAnswered (q:qs) answers
     | otherwise = commonlyAnswered qs answers
 
 sndPart :: IO Int
-sndPart = parseInput <&> sum . map (commonlyAnswered questions . map Text.unpack)
+sndPart = parseInput <&> sum . map (commonlyAnswered questions)
