@@ -1,38 +1,34 @@
 import Data.Set (toList, fromList)
-import qualified Data.Text as T
+import qualified Data.Text as Text
+import Data.Functor ((<&>))
 
-blankLineDelimiter :: T.Text
-blankLineDelimiter = T.pack "\n\n"
+type Form = [Text.Text]
+type Question = Char
+type Answer = String
 
-splitGroups :: String -> [T.Text]
-splitGroups = T.splitOn blankLineDelimiter . T.pack
+blankLineDelimiter :: Text.Text
+blankLineDelimiter = Text.pack "\n\n"
 
-parseInput :: IO [[T.Text]]
-parseInput = do
-    input <- readFile "06.in"
-    let unprocGroups = splitGroups input
-    return $ map T.lines unprocGroups
+splitGroups :: String -> [Text.Text]
+splitGroups = Text.splitOn blankLineDelimiter . Text.pack
+
+parseInput :: IO [Form]
+parseInput = fmap (map Text.lines . splitGroups) (readFile "06.in")
 
 removeDuplicates :: Ord a => [a] -> [a]
 removeDuplicates = toList . fromList
 
 fstPart :: IO Int
-fstPart = do
-    input <- parseInput
-    let processedGroups = map T.concat input
-    return $ sum $ map (length . removeDuplicates . T.unpack) processedGroups
+fstPart = parseInput <&> sum . map (length . removeDuplicates . Text.unpack) . map Text.concat
 
-questions :: [Char]
+questions :: [Question]
 questions = ['a'..'z']
 
-commonlyAnswered :: [Char] -> [String] -> Int
+commonlyAnswered :: [Question] -> [Answer] -> Int
 commonlyAnswered [] _ = 0
 commonlyAnswered (q:qs) answers
     | all (q `elem`) answers = 1 + commonlyAnswered qs answers
-    | otherwise = commonlyAnswered qs answers 
+    | otherwise = commonlyAnswered qs answers
 
 sndPart :: IO Int
-sndPart = do
-    input <- parseInput
-    let strings = map (map T.unpack) input
-    return $ sum $ map (commonlyAnswered questions) strings
+sndPart = parseInput <&> sum . map (commonlyAnswered questions . map Text.unpack)

@@ -1,56 +1,11 @@
-import Data.List as L ( sort )
-
-seatingRows :: [Int]
-seatingRows = [0..127]
-
-seatingColumns :: [Int]
-seatingColumns = [0..7]
+import Data.List ( sort )
+import Data.Bifunctor (Bifunctor(bimap))
+import Data.Functor ((<&>))
 
 -- U -> Upper (B, R) | B -> Bottom (F, L)
 data Direction = U | B deriving Show
 
-binSpacePart :: [Direction] -> [Int] -> Int
-binSpacePart [] [result] = result
-binSpacePart (d:ds) range = binSpacePart ds reducedRange
-    where middleElement = range !! div (length range) 2
-          reducedRange = case d of
-            B -> [head range..(middleElement - 1)]
-            _ -> [middleElement..last range]
-
-selectRow :: [Direction] -> Int
-selectRow dirs = binSpacePart dirs seatingRows
-
-selectColumn :: [Direction] -> Int
-selectColumn dirs = binSpacePart dirs seatingColumns
-
-seatId :: Int -> Int -> Int
-seatId row column = row * 8 + column
-
-parseInput :: IO [([Direction], [Direction])]
-parseInput = do
-    input <- readFile "05.in"
-    return $ map parseDirections $ lines input
-
-toDirection :: Char -> Direction
-toDirection c = case c of
-    'B' -> U
-    'R' -> U
-    _ -> B
-
-parseDirections :: String -> ([Direction], [Direction])
-parseDirections input = (map toDirection rowDirs, map toDirection colDirs)
-    where rowDirs = take 7 input
-          colDirs = reverse (take 3 (reverse input))
-
-computePosition :: ([Direction], [Direction]) -> Int
-computePosition (rowDirs, colDirs) = seatId (selectRow rowDirs) (selectColumn colDirs)
-
-fstPart :: IO ()
-fstPart = do
-    input <- parseInput
-    print $ maximum $ map computePosition input
-
-data Seat = Seat
+data Seat = Seat 
     { row        :: Int
     , col        :: Int
     , identifier :: Int
@@ -61,6 +16,49 @@ instance Show Seat where
 
 instance Ord Seat where
     x <= y = identifier x <= identifier y
+
+seatingRows :: [Int]
+seatingRows = [0..127]
+
+seatingColumns :: [Int]
+seatingColumns = [0..7]
+
+binSpacePart :: [Int] -> [Direction] -> Int
+binSpacePart [result] [] = result
+binSpacePart range (d:ds) = binSpacePart reducedRange ds
+    where middleElement = range !! div (length range) 2
+          reducedRange = case d of
+            B -> [head range..(middleElement - 1)]
+            _ -> [middleElement..last range]
+
+selectRow :: [Direction] -> Int
+selectRow = binSpacePart seatingRows
+
+selectColumn :: [Direction] -> Int
+selectColumn = binSpacePart seatingColumns
+
+seatId :: Int -> Int -> Int
+seatId row column = row * 8 + column
+
+parseInput :: IO [([Direction], [Direction])]
+parseInput = fmap (map parseDirections . lines) (readFile "05.in")
+
+toDirection :: Char -> Direction
+toDirection c = case c of
+    'B' -> U
+    'R' -> U
+    _ -> B
+
+parseDirections :: String -> ([Direction], [Direction])
+parseDirections input = bimap (map toDirection) (map toDirection) (rowDirs, colDirs)
+    where rowDirs = take 7 input
+          colDirs = reverse (take 3 (reverse input))
+
+computePosition :: ([Direction], [Direction]) -> Int
+computePosition (rowDirs, colDirs) = seatId (selectRow rowDirs) (selectColumn colDirs)
+
+fstPart :: IO Int
+fstPart = parseInput <&> maximum . map computePosition
 
 computeSeat :: ([Direction], [Direction]) -> Seat
 computeSeat (rowDirs, colDirs) =

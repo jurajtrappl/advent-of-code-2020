@@ -1,42 +1,49 @@
-import qualified Data.Graph as G
-import qualified Data.Text as T
+import qualified Data.Graph as Graph
+import qualified Data.Text as Text
 import qualified Data.Text.IO as IO
-import Util (readMaybe, split')
 
-parseInput :: IO [T.Text]
-parseInput = do
-    input <- IO.readFile "07.in"
-    return $ T.lines input
+type Rule = Text.Text
 
-emptyEdge :: (Int, T.Text)
-emptyEdge = (0, T.pack "")
+readMaybe :: Read a => Text.Text -> Maybe a
+readMaybe s = case reads (Text.unpack s) of
+                    [(val, "")] -> Just val
+                    _           -> Nothing
 
-parseEdge :: T.Text -> (Int, T.Text)
+parseInput :: IO [Rule]
+parseInput = fmap Text.lines (IO.readFile "07.in")
+
+emptyEdge :: (Int, Text.Text)
+emptyEdge = (0, Text.pack "")
+
+parseEdge :: Text.Text -> (Int, Text.Text)
 parseEdge value = case weight of
         Just w -> (w, color)
         Nothing -> emptyEdge
-    where weight = readMaybe (head (T.words value))
-          color = T.unwords $ take 2 $ drop 1 $ T.words value
+    where weight = readMaybe (head (Text.words value))
+          color = Text.unwords $ take 2 $ drop 1 $ Text.words value
 
-processLine :: [T.Text] -> (T.Text, [(Int, T.Text)])
+split' :: Text.Text -> String -> [Text.Text]
+split' value del = Text.splitOn (Text.pack del) value
+
+processLine :: [Text.Text] -> (Text.Text, [(Int, Text.Text)])
 processLine [unprocOrigin, unprocEdges] = (originColor, if edges == [emptyEdge] then [] else edges)
-    where originColor = T.unwords $ take 2 (T.words unprocOrigin)
+    where originColor = Text.unwords $ take 2 (Text.words unprocOrigin)
           edges = map parseEdge (split' unprocEdges ",")
 
-parseGraph :: [T.Text] -> [(T.Text, [(Int, T.Text)])]
+parseGraph :: [Text.Text] -> [(Text.Text, [(Int, Text.Text)])]
 parseGraph input = map processLine splitted
     where splitted = map (`split'` "contain") input
 
-createUnweightedGraph :: [(T.Text, [(Int, T.Text)])] -> [(T.Text, Int)] -> G.Graph
-createUnweightedGraph d vIds = G.buildG (snd $ head vIds, snd $ last vIds) $ concatMap createEdges onlyIds
+createUnweightedGraph :: [(Text.Text, [(Int, Text.Text)])] -> [(Text.Text, Int)] -> Graph.Graph
+createUnweightedGraph d vIds = Graph.buildG (snd $ head vIds, snd $ last vIds) $ concatMap createEdges onlyIds
     where edgesIds = map (concatMap (numberEdge vIds) . snd) d
           zipped = zip vIds edgesIds
           onlyIds = zip (map (snd . fst) zipped) (map (map snd . snd) zipped)
             
-numberVertices :: [T.Text] -> [(T.Text, Int)]
+numberVertices :: [Text.Text] -> [(Text.Text, Int)]
 numberVertices vertices = zip vertices [1..length vertices]
 
-numberEdge :: [(T.Text, Int)] -> (Int, T.Text) -> [(T.Text, Int)]
+numberEdge :: [(Text.Text, Int)] -> (Int, Text.Text) -> [(Text.Text, Int)]
 numberEdge vIds (_, v) = found
     where found = filter ((== v) . fst) vIds
 
@@ -49,8 +56,8 @@ fstPart = do
     let unprocG = parseGraph input
     let vIds = numberVertices $ map fst unprocG
     let g = createUnweightedGraph unprocG vIds
-    let shinyGoldId = snd $ head $ filter (\ (n,_) -> n == T.pack "shiny gold") vIds
-    let allReachable = map (\ (color, id) -> filter (/=id) $ G.reachable g id) vIds
+    let shinyGoldId = snd $ head $ filter (\ (n,_) -> n == Text.pack "shiny gold") vIds
+    let allReachable = map (\ (color, id) -> filter (/=id) $ Graph.reachable g id) vIds
     return $ length $ filter (elem shinyGoldId) allReachable
 
 

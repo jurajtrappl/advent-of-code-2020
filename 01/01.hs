@@ -1,9 +1,14 @@
-import Util (readInt, uncurry3)
-    
-readInputToNumbers :: IO [Int]
-readInputToNumbers = do
-    input <- readFile "01.in"
-    return $ map readInt $ lines input
+type Expense = Int
+type ExpenseReport = [Expense]
+
+uncurry3 :: (a -> b -> a) -> (a, b, b) -> a
+uncurry3 f (x, y, z) = f (f x y) z
+
+unsafeReadInt :: String -> Int
+unsafeReadInt s = read s :: Int
+
+readInputToNumbers :: IO ExpenseReport
+readInputToNumbers = map unsafeReadInt . lines <$> readFile "01.in"
 
 fstPart :: IO ()
 fstPart = do

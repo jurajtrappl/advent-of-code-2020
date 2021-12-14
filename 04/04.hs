@@ -1,46 +1,44 @@
-{-# LANGUAGE RecordWildCards #-}
+import qualified Data.List as List
+import Data.Maybe ( isJust, fromJust )
+import qualified Data.Text as Text
+import Data.Functor ((<&>))
 
-import qualified Data.List as L
-import Data.Maybe ( isJust )
-import qualified Data.Text as T
-import qualified Util as U
+type Field = Text.Text
+type FieldData = (Text.Text, Text.Text)
+type Passport = [Text.Text]
 
-fieldsWithoutCid :: [T.Text]
-fieldsWithoutCid = map T.pack [ "byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid" ]
+fieldsWithoutCid :: [Field]
+fieldsWithoutCid = map Text.pack [ "byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid" ]
 
-allValidFields :: [T.Text]
-allValidFields = fieldsWithoutCid ++ [T.pack "cid"]
+allValidFields :: [Field]
+allValidFields = fieldsWithoutCid ++ [Text.pack "cid"]
 
-validCombinations :: [[T.Text]]
-validCombinations = L.permutations allValidFields ++ L.permutations fieldsWithoutCid
+validCombinations :: [[Field]]
+validCombinations = List.permutations allValidFields ++ List.permutations fieldsWithoutCid
 
-blankLineDelimiter :: T.Text
-blankLineDelimiter = T.pack "\n\n"
+blankLineDelimiter :: Text.Text
+blankLineDelimiter = Text.pack "\n\n"
 
-splitPassportData :: String -> [T.Text]
-splitPassportData = T.splitOn blankLineDelimiter . T.pack
+splitPassportData :: String -> [Text.Text]
+splitPassportData = Text.splitOn blankLineDelimiter . Text.pack
 
-parseInput :: IO [[T.Text]]
-parseInput = do
-    input <- readFile "04.in"
-    let unprocPassports = splitPassportData input
-    let withoutNewlines = map T.lines unprocPassports
-    return $ map (concatMap T.words) withoutNewlines
+parseInput :: IO [Passport]
+parseInput = fmap (map (concatMap Text.words . Text.lines) . splitPassportData) (readFile "04.in")
 
-stripData :: T.Text -> T.Text
-stripData = head . T.splitOn (T.pack ":")
+stripData :: Text.Text -> Text.Text
+stripData = head . Text.splitOn (Text.pack ":")
 
-fstPart :: IO ()
-fstPart = do
-    input <- parseInput
-    let onlyFieldsHeaders = map (map stripData) input
-    print $ (length . filter (`elem` validCombinations)) onlyFieldsHeaders
+fstPart :: IO Int
+fstPart = parseInput <&> length . filter (`elem` validCombinations) . map (map stripData)
 
-segmendField :: T.Text -> (T.Text, T.Text)
-segmendField = U.tuplify . T.splitOn (T.pack ":")
+tuplify :: [a] -> (a, a)
+tuplify [x, y] = (x, y)
 
-isFieldDataValid :: (T.Text, T.Text) -> Bool
-isFieldDataValid (h, d) = case T.unpack h of
+segmendField :: Text.Text -> FieldData
+segmendField = tuplify . Text.splitOn (Text.pack ":")
+
+isFieldDataValid :: FieldData -> Bool
+isFieldDataValid (h, d) = case Text.unpack h of
     "byr" -> isValidBirthYear d
     "iyr" -> isValidIssueYear d
     "eyr" -> isValidExpirationYear d
@@ -50,63 +48,68 @@ isFieldDataValid (h, d) = case T.unpack h of
     "pid" -> isValidPassportId d
     _ -> True   --cid
 
-isPassportValid :: [(T.Text, T.Text)] -> Bool
+isPassportValid :: [FieldData] -> Bool
 isPassportValid = foldr ((&&) . isFieldDataValid) True
 
-isValidBirthYear :: T.Text -> Bool
+readMaybe :: Read a => Text.Text -> Maybe a
+readMaybe s = case reads (Text.unpack s) of
+                    [(val, "")] -> Just val
+                    _           -> Nothing
+
+isValidBirthYear :: Field -> Bool
 isValidBirthYear value = case maybeBirthYear of
     Just n  -> n >= 1920 && n <= 2002
     Nothing -> False
-    where maybeBirthYear = U.readMaybe value :: Maybe Int
+    where maybeBirthYear = readMaybe value :: Maybe Int
 
-isValidIssueYear :: T.Text -> Bool
+isValidIssueYear :: Field -> Bool
 isValidIssueYear value = case maybeIssueYear of
     Just n  -> n >= 2010 && n <= 2020
     Nothing -> False
-    where maybeIssueYear = U.readMaybe value :: Maybe Int
+    where maybeIssueYear = readMaybe value :: Maybe Int
 
-isValidExpirationYear :: T.Text -> Bool
+isValidExpirationYear :: Field -> Bool
 isValidExpirationYear value = case maybeExpirationYear of
     Just n  -> n >= 2020 && n <= 2030
     Nothing -> False
-    where maybeExpirationYear = U.readMaybe value :: Maybe Int
+    where maybeExpirationYear = readMaybe value :: Maybe Int
 
-isValidMetric :: T.Text -> Bool
-isValidMetric value = last splitted == T.empty && isJust maybeUnit && U.fromJust maybeUnit >= 150 && U.fromJust maybeUnit <= 193
-    where splitted = T.splitOn (T.pack "cm") value
-          maybeUnit = U.readMaybe (head splitted) :: Maybe Int
+isValidMetric :: Field -> Bool
+isValidMetric value = last splitted == Text.empty && isJust maybeUnit && fromJust maybeUnit >= 150 && fromJust maybeUnit <= 193
+    where splitted = Text.splitOn (Text.pack "cm") value
+          maybeUnit = readMaybe (head splitted) :: Maybe Int
 
-isValidImperial :: T.Text -> Bool
-isValidImperial value = last splitted == T.empty && isJust maybeUnit && U.fromJust maybeUnit >= 59 && U.fromJust maybeUnit <= 76
-    where splitted = T.splitOn (T.pack "in") value
-          maybeUnit = U.readMaybe (head splitted) :: Maybe Int
+isValidImperial :: Field -> Bool
+isValidImperial value = last splitted == Text.empty && isJust maybeUnit && fromJust maybeUnit >= 59 && fromJust maybeUnit <= 76
+    where splitted = Text.splitOn (Text.pack "in") value
+          maybeUnit = readMaybe (head splitted) :: Maybe Int
 
-isValidHeight :: T.Text -> Bool
+isValidHeight :: Field -> Bool
 isValidHeight value = isValidMetric value || isValidImperial value
 
 hexaNums :: [Char]
 hexaNums = ['0'..'9'] ++ ['a'..'f']
 
-isHexa :: T.Text -> Bool
-isHexa value = originalLength == T.length filteredHexas
-    where originalLength = T.length value
-          filteredHexas = T.filter (`elem` hexaNums) value
+isHexa :: Field -> Bool
+isHexa value = originalLength == Text.length filteredHexas
+    where originalLength = Text.length value
+          filteredHexas = Text.filter (`elem` hexaNums) value
 
-isValidHairColor :: T.Text -> Bool
-isValidHairColor value = T.head value == '#' && T.length num == 6 && isHexa num
-    where num = T.drop 1 value
+isValidHairColor :: Field -> Bool
+isValidHairColor value = Text.head value == '#' && Text.length num == 6 && isHexa num
+    where num = Text.drop 1 value
 
-validEyeColors :: [T.Text]
-validEyeColors = map T.pack [ "amb", "blu", "brn", "gry", "grn", "hzl", "oth" ]
+validEyeColors :: [Text.Text]
+validEyeColors = map Text.pack [ "amb", "blu", "brn", "gry", "grn", "hzl", "oth" ]
 
-isValidEyeColor :: T.Text -> Bool
+isValidEyeColor :: Field -> Bool
 isValidEyeColor value = value `elem` validEyeColors
 
-isValidPassportId :: T.Text -> Bool
-isValidPassportId value = T.length value == 9 && case maybePassportId of
+isValidPassportId :: Field -> Bool
+isValidPassportId value = Text.length value == 9 && case maybePassportId of
     Just n  -> n >= 0 && n <= 999999999
     Nothing -> False
-    where maybePassportId = U.readMaybe value :: Maybe Int
+    where maybePassportId = readMaybe value :: Maybe Int
 
 sndPart :: IO Int
 sndPart = do

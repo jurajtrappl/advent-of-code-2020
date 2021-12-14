@@ -1,7 +1,9 @@
-import qualified Data.Matrix as M
+import qualified Data.Matrix as Matrix
 import Prelude hiding (floor)
+import Data.Functor ((<&>))
 
-type SeatLayout = M.Matrix [Char]
+type Location = (Int, Int)
+type SeatLayout = Matrix.Matrix [Char]
 
 floor :: String
 floor = "."
@@ -13,70 +15,53 @@ occupiedSeat :: String
 occupiedSeat = "#"
 
 parseInput :: IO SeatLayout
-parseInput = do
-    input <- readFile "11.in"
-    return $ M.fromLists $ map (map (:[])) $ lines input
+parseInput = fmap (map (map (:[])) . lines) (readFile "11.in") <&> Matrix.fromLists
 
-isSeatEqualTo :: SeatLayout -> (Int, Int) -> String -> Bool
-isSeatEqualTo seats (r, c) char = case M.safeGet r c seats of
+isSeatEqualTo :: String -> SeatLayout -> Location -> Bool
+isSeatEqualTo char seats (r, c) = case Matrix.safeGet r c seats of
     Just v -> v == char
     Nothing -> False
 
-isUnoccupied :: SeatLayout -> (Int, Int) -> Bool
-isUnoccupied seats indices = not $ isSeatEqualTo seats indices occupiedSeat
+isUnoccupied :: SeatLayout -> Location -> Bool
+isUnoccupied seats location = not $ isSeatEqualTo occupiedSeat seats location
 
-isEmptySeat :: SeatLayout -> (Int, Int) -> Bool
-isEmptySeat seats indices@(r, c) =
-    isSeatEqualTo seats indices emptySeat &&
-    isUnoccupied seats (r, c - 1) && -- left
-    isUnoccupied seats (r, c + 1) && -- right
-    isUnoccupied seats (r - 1, c) && -- up
-    isUnoccupied seats (r + 1, c) && -- bottom
-    isUnoccupied seats (r - 1, c - 1) && -- diag upper left
-    isUnoccupied seats (r - 1, c + 1) && -- diag upper right
-    isUnoccupied seats (r + 1, c - 1) && -- diag bottom left
-    isUnoccupied seats (r + 1, c + 1) -- diag bottom right
+getNeighbours :: Location -> [Location]
+getNeighbours location@(r, c) = filter (/= location) [(a, b) | a <- [r - 1..r + 1], b <- [c - 1..c + 1]]
 
-isOccupiedAdj :: SeatLayout -> (Int, Int) -> Bool
-isOccupiedAdj seats indices@(r, c) =
-    isSeatEqualTo seats indices occupiedSeat && adjacentOccupiedCount >= 4
-    where adjacentOccupiedCount = length $ filter (== True)
-                        [ isSeatEqualTo seats (r, c - 1) occupiedSeat
-                        , isSeatEqualTo seats (r, c + 1) occupiedSeat
-                        , isSeatEqualTo seats (r - 1, c) occupiedSeat
-                        , isSeatEqualTo seats (r + 1, c) occupiedSeat
-                        , isSeatEqualTo seats (r - 1, c - 1) occupiedSeat
-                        , isSeatEqualTo seats (r - 1, c + 1) occupiedSeat
-                        , isSeatEqualTo seats (r + 1, c - 1) occupiedSeat
-                        , isSeatEqualTo seats (r + 1, c + 1) occupiedSeat ]
+isEmptySeat :: SeatLayout -> Location -> Bool
+isEmptySeat seats location@(r, c) =
+    isSeatEqualTo emptySeat seats location && all (isUnoccupied seats) (getNeighbours location)
 
-updateSeat :: SeatLayout -> SeatLayout -> (Int, Int) -> SeatLayout
-updateSeat seats finalSeats indices
-    | isEmptySeat seats indices = M.setElem occupiedSeat indices finalSeats
-    | isOccupiedAdj seats indices = M.setElem emptySeat indices finalSeats
+isOccupiedAdj :: SeatLayout -> Location -> Bool
+isOccupiedAdj seats location@(r, c) =
+    isSeatEqualTo occupiedSeat seats location && adjacentOccupiedCount >= 4
+    where adjacentOccupiedCount = length $ filter (== True) (map (isSeatEqualTo occupiedSeat seats) (getNeighbours location))
+
+updateSeat :: SeatLayout -> SeatLayout -> Location -> SeatLayout
+updateSeat seats finalSeats location
+    | isEmptySeat seats location = Matrix.setElem occupiedSeat location finalSeats
+    | isOccupiedAdj seats location = Matrix.setElem emptySeat location finalSeats
     | otherwise = finalSeats
 
-seatPassengers :: SeatLayout -> SeatLayout -> (Int, Int) -> SeatLayout
-seatPassengers seatsInitial finalSeats indices@(r, c)
-    | M.nrows seatsInitial == r && M.ncols seatsInitial == c = newSeats
-    | M.ncols seatsInitial == c = seatPassengers seatsInitial newSeats (r + 1, 1)
+seatPassengers :: SeatLayout -> SeatLayout -> Location -> SeatLayout
+seatPassengers seatsInitial finalSeats location@(r, c)
+    | Matrix.nrows seatsInitial == r && Matrix.ncols seatsInitial == c = newSeats
+    | Matrix.ncols seatsInitial == c = seatPassengers seatsInitial newSeats (r + 1, 1)
     | otherwise = seatPassengers seatsInitial newSeats (r, c + 1)
-    where newSeats = updateSeat seatsInitial finalSeats indices
+    where newSeats = updateSeat seatsInitial finalSeats location
 
-applySeatRules :: SeatLayout -> [SeatLayout] -> Int
-applySeatRules seats computed
+applySeatRules :: [SeatLayout] -> SeatLayout -> Int
+applySeatRules computed seats
     | newSeats `elem` computed = countUnoccupied newSeats (1, 1)
-    | otherwise = applySeatRules newSeats (newSeats:computed)
+    | otherwise = applySeatRules (newSeats:computed) newSeats
     where newSeats = seatPassengers seats seats (1, 1)
 
-countUnoccupied :: SeatLayout -> (Int, Int) -> Int
-countUnoccupied seats indices@(r, c)
-    | M.nrows seats == r && M.ncols seats == c = add
-    | M.ncols seats == c = add + countUnoccupied seats (r + 1, 1)
+countUnoccupied :: SeatLayout -> Location -> Int
+countUnoccupied seats location@(r, c)
+    | Matrix.nrows seats == r && Matrix.ncols seats == c = add
+    | Matrix.ncols seats == c = add + countUnoccupied seats (r + 1, 1)
     | otherwise = add + countUnoccupied seats (r, c + 1)
-    where add = if seats M.! indices == occupiedSeat then 1 else 0
+    where add = if seats Matrix.! location == occupiedSeat then 1 else 0
 
 fstPart :: IO Int
-fstPart = do
-    input <- parseInput
-    return $ applySeatRules input []
+fstPart = parseInput <&> applySeatRules []

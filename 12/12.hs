@@ -1,17 +1,19 @@
 {-# OPTIONS_GHC -Wno-missing-methods #-}
 
 import Prelude hiding (Left, Right)
+import Data.Functor ((<&>))
 
 type Degrees = Int
+type Rotation = Vector
 
-data Direction =
-    North Int |
-    South Int |
-    East Int |
-    West Int |
-    Left Degrees |
-    Right Degrees |
-    Forward Int
+data Direction
+    = North Int
+    | South Int
+    | East Int
+    | West Int
+    | Left Degrees
+    | Right Degrees
+    | Forward Int
     deriving (Show)
 
 data Vector = V Int Int
@@ -21,8 +23,6 @@ instance Show Vector where
 
 instance Num Vector where
     (V x y) + (V x' y') = V (x + x') (y + y')
-
-type Rotation = Vector
 
 scaleV :: Vector -> Int -> Vector
 scaleV (V x y) factor = V (x * factor) (y * factor)
@@ -54,9 +54,7 @@ parseDirection value = case head value of
     where num = read (tail value) :: Int
 
 parseInput :: IO [Direction]
-parseInput = do
-    input <- readFile "12.in"
-    return $ map parseDirection $ lines input
+parseInput = fmap (map parseDirection . lines) (readFile "12.in")
 
 addDirection :: Vector -> Rotation -> Direction -> (Vector, Rotation)
 addDirection p rot dir = case dir of
@@ -73,7 +71,5 @@ processDirections _ point [] = point
 processDirections rot point (d:ds) = processDirections newRot newPoint ds
     where (newPoint, newRot) = addDirection point rot d
 
-fstPart :: IO ()
-fstPart = do
-    directions <- parseInput
-    print $ manhattanDistance (V 0 0) $ processDirections (V 1 0) (V 0 0) directions
+fstPart :: IO Int
+fstPart = parseInput <&> manhattanDistance (V 0 0) . processDirections (V 1 0) (V 0 0)

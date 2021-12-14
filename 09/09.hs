@@ -1,12 +1,13 @@
-import Data.List.Split (chunksOf)
+import Data.Functor ((<&>))
 
 preambleLength :: Int
 preambleLength = 25
 
+unsafeReadInteger :: String -> Integer
+unsafeReadInteger s = read s :: Integer
+
 parseInput :: IO [Integer]
-parseInput = do
-    input <- readFile "09.in"
-    return $ map (\s -> read s :: Integer) $ lines input
+parseInput = fmap (map unsafeReadInteger . lines) (readFile "09.in")
 
 windowsOf :: Int -> [a] -> [[a]]
 windowsOf n (x:xs)
@@ -14,16 +15,12 @@ windowsOf n (x:xs)
     | otherwise = [x:xs]
 
 isXamsValid :: [Integer] -> Bool
-isXamsValid nums = any (\(a, b) -> a + b == lastNum) pairs
+isXamsValid nums = any (\(a, b) -> a + b == last nums) pairs
     where preamble = take preambleLength nums
           pairs = [(a,b) | (a,b) <- [(x, y) | x <- preamble, y <- preamble], a < b]
-          lastNum = last nums
 
-fstPart :: IO ()
-fstPart = do
-    input <- parseInput
-    let windows = windowsOf (preambleLength + 1) input
-    print $ head $ filter (not . isXamsValid) windows
+fstPart :: IO [Integer]
+fstPart = parseInput <&> head . filter (not . isXamsValid) . windowsOf (preambleLength + 1)
 
 contiguousSumSet :: [Integer] -> Integer -> [Integer]
 contiguousSumSet list@(x:xs) n
@@ -41,7 +38,6 @@ startContiguous (x:xs) n visited
 sndPart :: IO ()
 sndPart = do
     input <- parseInput
-    let windows = windowsOf (preambleLength + 1) input
-    let firstInvalid = last $ head $ filter (not . isXamsValid) windows
-    let contiguousResult = contiguousSumSet input firstInvalid
+    invalid <- fstPart
+    let contiguousResult = contiguousSumSet input (last invalid)
     print $ minimum contiguousResult + maximum contiguousResult

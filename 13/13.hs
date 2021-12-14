@@ -1,19 +1,19 @@
-import Data.List.Split
+import Data.List.Split ( splitOn )
 import Data.List (minimumBy)
 import Data.Function (on)
 
 type BusId = Int
 type TimeStamp = Int
 
-readBusId :: String -> BusId
-readBusId value = read value :: BusId
+unsafeReadInt :: String -> Int
+unsafeReadInt value = read value :: Int
 
 parseInput :: IO (TimeStamp, [BusId])
 parseInput = do
     fContent <- readFile "13.in"
     let input = lines fContent
     return (read (head input) :: TimeStamp,
-            map readBusId $ filter (/= "x") $ splitOn "," (input !! 1))
+            map unsafeReadInt $ filter (/= "x") $ splitOn "," (input !! 1))
 
 formatResult :: (Int, Int) -> Int
 formatResult (x, y) = x * (x - y)

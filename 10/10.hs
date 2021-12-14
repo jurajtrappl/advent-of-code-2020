@@ -1,9 +1,10 @@
 import Data.List ( sort )
 
+unsafeReadInt :: String -> Int
+unsafeReadInt s = read s :: Int
+
 parseInput :: IO [Int]
-parseInput = do
-    input <- readFile "10.in"
-    return $ map (\s -> read s :: Int) $ lines input
+parseInput = fmap (map unsafeReadInt . lines) (readFile "10.in")
 
 pairsDiff :: [Int] -> [Int]
 pairsDiff [x] = []

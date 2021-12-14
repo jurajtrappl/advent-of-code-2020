@@ -1,6 +1,11 @@
 import qualified Data.Set as S
+import Data.Functor ((<&>))
 
-data Command = Jmp Int | Acc Int | Nop Int deriving (Show)
+data Command
+    = Jmp Int
+    | Acc Int
+    | Nop Int
+    deriving (Show)
 
 parseCommand :: String -> Command
 parseCommand line = case head $ words line of
@@ -11,19 +16,19 @@ parseCommand line = case head $ words line of
           number = read (tail numberPart) :: Int
           sign = if head numberPart == '+' then 1 else -1
 
-fstPartCodeRunner :: [Command] -> Int -> Int -> [Int] -> Int
-fstPartCodeRunner code ic acc executed
+parseInput :: IO [Command]
+parseInput = fmap (map parseCommand . lines) (readFile "08.in")
+
+fstPartCodeRunner :: Int -> Int -> [Int] -> [Command] -> Int
+fstPartCodeRunner ic acc executed code
     | ic `elem` executed = acc
     | otherwise = case code !! ic of
-        Acc x -> fstPartCodeRunner code (ic + 1) (acc + x) (ic : executed)
-        Jmp x -> fstPartCodeRunner code (ic + x) acc (ic : executed)
-        _ -> fstPartCodeRunner code (ic + 1) acc (ic : executed)
+        Acc x -> fstPartCodeRunner (ic + 1) (acc + x) (ic : executed) code
+        Jmp x -> fstPartCodeRunner (ic + x) acc (ic : executed) code
+        _ -> fstPartCodeRunner (ic + 1) acc (ic : executed) code
 
-fstPart :: IO ()
-fstPart = do
-    input <- readFile "08.in"
-    let commands = map parseCommand $ lines input
-    print $ fstPartCodeRunner commands 0 0 []
+fstPart :: IO Int
+fstPart = parseInput <&> fstPartCodeRunner 0 0 []
 
 sndPartCodeRunner :: Int -> Int -> [Int] -> [Command] -> ([Int], Int)
 sndPartCodeRunner ic acc executed code
@@ -55,7 +60,6 @@ switchInstructions code ic = xs ++ [newInstruction] ++ xss
 
 sndPart :: IO ()
 sndPart = do
-    input <- readFile "08.in"
-    let commands = map parseCommand $ lines input
+    commands <- parseInput
     let switched = map (switchInstructions commands) $ findSwitchableInstr commands
     print $ snd $ head $ filter (not . isCorrupted . fst) $ map (sndPartCodeRunner 0 0 []) switched
