@@ -1,63 +1,49 @@
-import qualified Data.Graph as Graph
-import qualified Data.Text as Text
-import qualified Data.Text.IO as IO
+import Data.List.Split (splitWhen)
+import Data.Bifunctor (Bifunctor(bimap))
 
-type Rule = Text.Text
+type Vertex = String
+type Queue = [Vertex]
+type UnweightedGraph = [(Vertex, [Vertex])]
+type WeightedEdge = (Vertex, Int)
+type Queue' = [WeightedEdge]
+type WeightedGraph = [(Vertex, [WeightedEdge])]
 
-readMaybe :: Read a => Text.Text -> Maybe a
-readMaybe s = case reads (Text.unpack s) of
-                    [(val, "")] -> Just val
-                    _           -> Nothing
+tuplify :: [a] -> (a, a)
+tuplify [x, y] = (x, y)
 
-parseInput :: IO [Rule]
-parseInput = fmap Text.lines (IO.readFile "07.in")
+toVertex :: [String] -> Vertex
+toVertex = concat . take 2
 
-emptyEdge :: (Int, Text.Text)
-emptyEdge = (0, Text.pack "")
+unsafeReadInt :: String -> Int
+unsafeReadInt s = read s :: Int
 
-parseEdge :: Text.Text -> (Int, Text.Text)
-parseEdge value = case weight of
-        Just w -> (w, color)
-        Nothing -> emptyEdge
-    where weight = readMaybe (head (Text.words value))
-          color = Text.unwords $ take 2 $ drop 1 $ Text.words value
+parseEdge :: [String] -> [WeightedEdge]
+parseEdge [] = []
+parseEdge ["no","other","bags."] = []
+parseEdge e = (concat (take 2 (drop 1 e)), unsafeReadInt $ head e) : parseEdge (drop 4 e)
 
-split' :: Text.Text -> String -> [Text.Text]
-split' value del = Text.splitOn (Text.pack del) value
+parseInput :: IO WeightedGraph
+parseInput = do
+    fContent <- readFile "07.in"
+    let splitted = map (splitWhen (== "contain") . words) (lines fContent)
+    return $ map (bimap toVertex parseEdge . tuplify) splitted
 
-processLine :: [Text.Text] -> (Text.Text, [(Int, Text.Text)])
-processLine [unprocOrigin, unprocEdges] = (originColor, if edges == [emptyEdge] then [] else edges)
-    where originColor = Text.unwords $ take 2 (Text.words unprocOrigin)
-          edges = map parseEdge (split' unprocEdges ",")
+getNeighbours :: WeightedGraph -> Vertex -> [WeightedEdge]
+getNeighbours g v = snd $ head $ filter (\(v', _) -> v' == v) g
 
-parseGraph :: [Text.Text] -> [(Text.Text, [(Int, Text.Text)])]
-parseGraph input = map processLine splitted
-    where splitted = map (`split'` "contain") input
+isShinyGoldReachable :: WeightedGraph -> Queue -> [Vertex] -> Bool
+isShinyGoldReachable _ [] _ = False
+isShinyGoldReachable g (current:qs) visited
+    | current == "shinygold" = True
+    | otherwise = isShinyGoldReachable g newQueue (visited ++ [current])
+    where neighbours = map fst $ getNeighbours g current
+          newQueue = qs ++ filter (`notElem` visited) neighbours
 
-createUnweightedGraph :: [(Text.Text, [(Int, Text.Text)])] -> [(Text.Text, Int)] -> Graph.Graph
-createUnweightedGraph d vIds = Graph.buildG (snd $ head vIds, snd $ last vIds) $ concatMap createEdges onlyIds
-    where edgesIds = map (concatMap (numberEdge vIds) . snd) d
-          zipped = zip vIds edgesIds
-          onlyIds = zip (map (snd . fst) zipped) (map (map snd . snd) zipped)
-            
-numberVertices :: [Text.Text] -> [(Text.Text, Int)]
-numberVertices vertices = zip vertices [1..length vertices]
-
-numberEdge :: [(Text.Text, Int)] -> (Int, Text.Text) -> [(Text.Text, Int)]
-numberEdge vIds (_, v) = found
-    where found = filter ((== v) . fst) vIds
-
-createEdges :: (Int, [Int]) -> [(Int, Int)]
-createEdges (v, n) = [ (v, a) | a <- n ]
-
-fstPart :: IO Int
+fstPart :: IO ()
 fstPart = do
-    input <- parseInput
-    let unprocG = parseGraph input
-    let vIds = numberVertices $ map fst unprocG
-    let g = createUnweightedGraph unprocG vIds
-    let shinyGoldId = snd $ head $ filter (\ (n,_) -> n == Text.pack "shiny gold") vIds
-    let allReachable = map (\ (color, id) -> filter (/=id) $ Graph.reachable g id) vIds
-    return $ length $ filter (elem shinyGoldId) allReachable
+    g <- parseInput
+    let vertices = filter (/= "shinygold") $ map fst g
+    print $ length $ filter (== True) $ map (\v -> isShinyGoldReachable g [v] []) vertices
+
 
 
